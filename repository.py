@@ -138,9 +138,11 @@ def personal_update(_id: int, new_changes: dict):
     try:
         with Session(autoflush=False, bind=engine) as db:
             user = db.query(Personal).filter(
-                and_(Personal.id == _id, Personal.is_deleted == False))
+                and_(Personal.id == _id, Personal.is_deleted == False)).first()
+            
             for k, v in new_changes.items():
                 if hasattr(user, k):
+                    print(True)
                     setattr(user, k, v)
             db.commit()
             return None
@@ -176,3 +178,24 @@ def check_user(_user_name, _password):
 
 
 # --------end PERSONAL------------------
+
+
+# -----------ORDERS---------------------------
+
+def order_add():
+    pass
+
+
+def order_result():
+    pass
+
+
+def order_update():
+    pass
+
+
+def order_delete():
+    pass
+
+
+# -----------end ORDERS---------------------------

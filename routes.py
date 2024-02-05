@@ -153,6 +153,25 @@ def table_delete_route(id):
 
 
 # ------------PERSONAL--------------------------
+@app.route("/personla", methods=['POST'])
+@jwt_required()
+def personal_add_route():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    role = get_jwt()
+    if role not in ['admin', 'manager']:
+        return jsonify({"status": "You don't have access"}), 404
+
+    data['author_id'] = user_id
+    user = Personal()
+    for k, v in data.items:
+        if hasattr(user, k):
+            setattr(user, k, v)
+    user = personal_add(user)
+    if user is None:
+        return jsonify({"status": "Success"}), 201
+    return jsonify({"status": "Some problems "}), 400
+
 
 @app.route("/personal/<int:id>/info", methods=["GET"])
 def personal_read_by_id_route(id):
@@ -164,14 +183,17 @@ def personal_read_route():
     return jsonify(result=personal_read())
 
 
-@app.route("/personal/<int:id>", methods=["PUT"])
+@app.route("/personal", methods=["PUT"])
 @jwt_required()
-def personal_update_route(id):
-    role = get_jwt()
+def personal_update_route():
+    role = get_jwt()['role']
+    print(role)
     if role not in ['admin', 'manager']:
         return jsonify({'status': "You don't have access to update"}), 400
     data = request.get_json()
-    changes = personal_update(id, data)
+    user_id = data['id']
+    del data['id']
+    changes = personal_update(user_id, data)
     if changes is None:
         return jsonify({"status": "Success"}), 201
     return changes
@@ -190,7 +212,3 @@ def personal_delete_route():
     return is_deleted
 
 # ------------end PERSONAL--------------------------
-
-
-
-
