@@ -13,9 +13,10 @@ class Menu(Base):
     title = Column(String)
     category = Column(String)
     description = Column(String)
-    status = Column(String) # ready, not ready
+    status = Column(String)  # ready, not ready
     price = Column(Float)
     is_deleted = Column(Boolean, default=False)
+    author_id = Column(Integer)
 
 
 class Personal(Base):
@@ -31,6 +32,7 @@ class Personal(Base):
     created_at = Column(DateTime)
     fired_at = Column(DateTime)
     is_deleted = Column(Boolean, default=False)
+    author_id = Column(Integer)
 
 
 class TableManagement(Base):
@@ -38,6 +40,7 @@ class TableManagement(Base):
     id = Column(Integer, primary_key=True, index=True)
     table_number = Column(Integer)
     is_deleted = Column(Boolean, default=False)
+    author_id = Column(Integer)
 
 
 class OrderManagement(Base):
@@ -53,6 +56,7 @@ class OrderManagement(Base):
     personal_id = Column(Integer, ForeignKey('personal.id'), nullable=False)
     created_at = Column(DateTime)
     is_deleted = Column(Boolean, default=False)
+    author_id = Column(Integer)
 
 
 Base.metadata.create_all(bind=engine)
