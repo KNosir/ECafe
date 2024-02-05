@@ -212,3 +212,34 @@ def personal_delete_route():
     return is_deleted
 
 # ------------end PERSONAL--------------------------
+
+
+# --------------ORDERS-------------------------------
+@app.route("/order", methods=["POST"])
+@jwt_required()
+def order_add_route():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    data["author_id"] = user_id
+    new_order = order_add(data)
+    if new_order is None:
+        return jsonify({'status': "Success"}), 201
+    return new_order
+
+
+
+@app.route("/orders", methods=["GET"])
+def order_result_route():
+    return jsonify(result=order_result()), 201
+
+@app.route("/orders/exact", methods=["GET"])
+def order_result_route_byperiod_byuser():
+    personal = request.args.get("personal")
+    print(personal)
+    start_period = request.args.get("start_period")
+    end_period = request.args.get("end_period")
+    return jsonify(result=order_result(personal, start_period, end_period)), 201
+
+
+# --------------end ORDERS-------------------------------
+

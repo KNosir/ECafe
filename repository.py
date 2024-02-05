@@ -139,7 +139,7 @@ def personal_update(_id: int, new_changes: dict):
         with Session(autoflush=False, bind=engine) as db:
             user = db.query(Personal).filter(
                 and_(Personal.id == _id, Personal.is_deleted == False)).first()
-            
+
             for k, v in new_changes.items():
                 if hasattr(user, k):
                     print(True)
@@ -182,12 +182,56 @@ def check_user(_user_name, _password):
 
 # -----------ORDERS---------------------------
 
-def order_add():
-    pass
+def order_add(data: dict):
+    utc_now = datetime.utcnow()
+    order_id = str(utc_now.year)+str(utc_now.month) + \
+        str(utc_now.day)+str(utc_now.hour) + \
+        str(utc_now.minute)+str(utc_now.second)
+
+    data["order_id"] = order_id
+    data['created_at'] = utc_now
+
+    for i in data['menu']:
+        with Session(autoflush=False, bind=engine) as db:
+            menu_id_info = db.query(Menu).filter(
+                Menu.id == i['menu_id']).first()
+        data["menu_id"] = i["menu_id"]
+        data["amount"] = i["amount"]
+        data["price"] = menu_id_info.price
+        data["total"] = data["price"] * data["amount"]
+
+        try:
+            with Session(autoflush=False, bind=engine) as db:
+                order = OrderManagement()
+                for k, v in data.items():
+                    if hasattr(order, k):
+                        setattr(order, k, v)
+                db.add(order)
+                db.commit()
+        except Exception as err:
+            print(err)
+            db.rollback()
+            return jsonify({"Status": "Something went wrong "}), 400
 
 
-def order_result():
-    pass
+def order_result(_personal='', start_period="0001-01-01", end_period="9999-12-12"):
+    try:
+        with Session(autoflush=False, bind=engine) as db:
+            result = db.query(OrderManagement).filter(and_(OrderManagement.created_at >= start_period,
+                                                           OrderManagement.created_at <= end_period, OrderManagement.order_status == "not completed"))
+            if _personal != "":
+                result = result.filter(OrderManagement.personal_id == _personal).all()
+
+        free_list = []
+        for i in result:
+            i = i.__dict__
+            del i["_sa_instance_state"]
+            free_list.append(i)
+        return free_list
+
+    except Exception as err:
+        print(err)
+        return jsonify({"status": "Something went wrong "}), 400
 
 
 def order_update():
