@@ -1,0 +1,93 @@
+1) Menu CRUD
+    
+    
+    route = /menu
+    route = /menu?(id, title, category, description)
+
+
+- C who can create 
+    1) admin
+    2) ceo
+
+  R who can read
+    -everybody
+
+  U who can update
+    1) admin
+    2) ceo
+
+  D who can delete
+    1) admin
+    2) ceo
+
+2) Table CRUD
+
+    route = /tables
+
+  C who can create 
+    1) admin
+    2) ceo
+
+   R who can read
+    -everybody
+
+  U who can update
+    1) admin
+    2) ceo
+
+  D who can delete
+    1) admin
+    2) ceo
+
+
+3) Personal CRUD
+
+    route = /personal ['GET', 'POST', 'UPDATE', 'DELETE']
+
+            /personal/<int: id>/info ['GET']
+            1) own id
+
+  C who can create 
+    1) admin
+    2) ceo
+
+  R who can read everybody
+    1) admin
+    2) ceo
+
+  R who can read own doc
+    1) id
+
+  U who can update
+    1) admin
+    2) ceo
+
+  D who can delete
+    1) admin
+    2) ceo
+
+
+
+
+4) Order CRUD
+
+    route = /actual_order ['GET', 'POST', 'UPDATE', 'DELETE']
+    route = /actual_order/<int: id>/by_id ['GET']
+    route = /done_order?period=23.01.23-24.05.23 (query is additional) ['GET']
+    route = /rejected_order?period=23.01.23-24.05.23 (query is additional) ['GET']
+
+  C who can create
+    -everybody
+
+  R who can read all 
+    1) admin
+    2) ceo
+
+  R who can see own  
+    -id
+
+  U who can update
+    -everybody
+
+  D who can delete
+    -everybody

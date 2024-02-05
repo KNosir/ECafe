@@ -1,98 +1,117 @@
 from flask import jsonify
 from sqlalchemy.orm import Session
-from models import Personal
-from datetime import datetime
-from connection import engine, get_session
 from models import *
+from datetime import datetime
+from connection import engine
 from sqlalchemy import and_
 
-import logging
 
+# --------------MENU--------------
 
-def get_all_personal(session):
-    return session.query(Personal).all()
-
-
-def add_personal(db, job_title, salary, first_name, last_name, age, status):
+def menu_add(_title: str, _category: str, _description: str, _status: str, _price: float):
     try:
+        with Session(autoflush=False, bind=engine) as db:
+            db.add(Menu(title=_title, category=_category, description=_description,
+                        status=_status, price=_price))
+            db.commit()
+    except Exception as err:
+        return err
 
-        personal = Personal(job_title=job_title, salary=salary, first_name=first_name, last_name=last_name, age=age,
-                            status=status)
-        db.add(personal)
-        db.commit()
-        return personal
-    except Exception as e:
-        logging.error(f"ERRPR is: {e}")
-        return str(e)
-
-def delete_personal(session, personal_id):
-    personal = session.query(Personal).filter_by(id=personal_id).first()
-    if personal:
-        session.delete(personal)
-        session.commit()
-        return personal
-    else:
-        raise ValueError("Personal data not found")
-
-
-def set_personal(session, personal_id, new_role):
-    personal = session.query(Personal).filter_by(id=personal_id).first()
-    if personal:
-        personal.job_title = new_role
-        session.commit()
-        return personal
-    else:
-        return "The data has not been updated"
-
-'----------start Orders-------------'
-# adding orders to data
+# menu_add('osh', 'eda', 'brinj, savzi, gusht, ravgan, ob, namak', 'ready', 20.99)
+# menu_add('shurbo', 'eda',
+#          'kartoshla, savzi, gusht, ravgan, ob, namak', 'ready', 13.99)
+# menu_add('rezashurbo', 'eda',
+#          'kartoshka, savzi, gusht, ravgan, ob, namak', 'ready', 10.99)
+# menu_add('qrutob', 'eda', 'fatir, gusht, ravgan, ob, namak', 'not ready', 28.99)
+# menu_add('cola', 'napitka', "", 'ready', 5.99)
+# menu_add('choy', 'napitka', '', 'not ready', 2.99)
+# menu_add('sezar', 'salat', '', 'ready', 8.99)
+# menu_add('alvia', 'salat', '', 'ready', 7.99)
 
 
-def orders_get_menu_info(_id):
+def menu_result(_title, _description, _category, _id, _price, _status) -> list:
     with Session(bind=engine, autoflush=False) as db:
-        result = db.query(Menu).filter(Menu.id == _id).first()
-        result = result.__dict__
-        del result['_sa_instance_state']
-        return result
+        result = db.query(Menu).filter(and_(Menu.is_deleted == False, Menu.title.ilike(f"%{_title}%"), Menu.description.ilike(
+            f"%{_description}%"), Menu.category.ilike(f"%{_category}%"), Menu.id.ilike(f"%{_id}%"), Menu.price.ilike(f"%{_price}%"), Menu.status.ilike(f"%{_status}%"))).all()
+        send_data = []
+        try:
+            for i in result:
+                i = i.__dict__
+                del i['_sa_instance_state']
+                send_data.append(i)
+        except Exception as e:
+            return e
+    return send_data
 
 
-def orders_add(menu_list, _personal_id, _table_id):
-    """
-    dict form of menu 
-    [
-        {menu_id : 1,
-        amount:10},
-        {menu_id: 2,
-        amount:20}
+def menu_update(new_changes: dict):
+    with Session(autoflush=False, bind=engine) as db:
+        menu_id = db.query(Menu).filter(
+            and_(Menu.id == new_changes["id"], Menu.is_deleted == False)).first()
+        if menu_id is not None:
+            del new_changes["id"]
+            for k, m in new_changes.items():
+                if hasattr(menu_id, k):
+                    setattr(menu_id, k, m)
+            db.commit()
+            return jsonify({"status": "Done successfuly"}), 201
+        else:
+            return jsonify({"status": "Menu not found"}), 404
 
-    ]
-    """
-    with Session(bind=engine, autoflush=False) as db:
-        _created_at = datetime.utcnow()
-        _order_id = f'{datetime.now().day}{datetime.now().month}{datetime.now().year}{datetime.now().hour}{datetime.now().minute}'
-        for i in menu_list:
-            menu_info = orders_get_menu_info(i['menu_id'])
-            _price = menu_info['price']
-            _menu_id = i['menu_id']
-            _amount = i['amount']
-            _dish_status = menu_info['status']
-            db.add(OrderManagement(created_at=_created_at,
-                   order_id=_order_id, menu_id=_menu_id, amount=_amount, price=_price, total=_amount*_price, order_status='not yet', dish_status=_dish_status, table_id=_table_id, personal_id=_personal_id))
-        db.commit()
+    return jsonify({"status": "Something went wrong"}), 500
 
 
-def orders_actual(_personal_id=''):
-    with Session(bind=engine, autoflush=False) as db:
-        actual_order = db.query(OrderManagement).filter(and_(OrderManagement.order_status ==
-                                                             'not yet', OrderManagement.order_status.ilike('%{}%'.format(_personal_id)))).all()
-        orders_list = []
-        for i in actual_order:
+def menu_delete(_id: int):
+    with Session(autoflush=False, bind=engine) as db:
+        deleted = db.query(Menu).filter(
+            and_(Menu.id == _id, Menu.is_deleted == False)).first()
+        if deleted is not None:
+            deleted.is_deleted = True
+            db.commit()
+            return jsonify({"status": "Done successfully"}), 201
+        else:
+            return jsonify({"status": "Not found"}), 404
+
+
+# ------------end Menu-------------
+
+
+# ----------TABLES------------------
+
+def table_add(_table_number: int):
+    try:
+        with Session(autoflush=False, bind=engine) as db:
+            db.add(TableManagement(table_number=_table_number))
+            db.commit
+    except Exception as err:
+        return err
+
+
+def table_read():
+    with Session(autoflush=False, bind=engine) as db:
+        result = db.query(TableManagement).filter(
+            TableManagement.is_deleted == False).all()
+        free_list = []
+        for i in result:
             i = i.__dict__
             del i['_sa_instance_state']
-            orders_list.append(i)
-    return orders_list
+            free_list.append(i)
+    return free_list
 
 
-orders_add([{'menu_id': 1, 'amount': 3}], 0, 0)
-print(orders_actual())
-'----------end Orders--------------'
+def table_delete(_id):
+    
+    with Session(autoflush=False, bind=engine) as db:
+        result = db.query(TableManagement).filter(
+            and_(TableManagement.id == _id, TableManagement.is_deleted == False)).first()
+        if result is not None:
+            result.is_deleted = True
+            db.commit()
+            return jsonify({"status": "Successfully"}), 201
+        return jsonify({'status':"Something went wrong "}), 404
+
+
+# --------end TABLES----------------
+    
+
+
